@@ -1,0 +1,47 @@
+straightforward    简单的
+limitations	   限制
+interact           相互作用
+sequentially       顺序
+interrupted        间断
+procedure          步骤
+constructing       构建
+trigger            触发
+optionally         可选
+originating        始发
+associated         关联
+interact           相互作用
+instantiate        实例
+detects            检测 
+linkage            联动
+invalid            无效
+prevent memory leaks 防止内存泄漏
+idle               空闲
+dim                暗淡
+ultimately         最终
+drained            耗尽
+critical           紧要
+lightweight        轻量级
+equivalent         相等
+programmatically   编程
+thereby            从而
+explicitly         明确地
+dramatic           戏剧性
+strictly           严格
+legitimate         合法
+conjunction        关联
+passes off         假冒
+typically          通常
+transitioning      过渡
+effectively        有效
+significant        显著
+flexibility        灵活性
+Trade-offs         权衡
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,81 @@
+Best Practices for Background Jobs
+
+1.Running in a Background Service
+    a.Createing a Background Service
+    使用IntentService:
+    优点：结构简单直接能够处理耗时操作而不影响用户界面的反应、不受绝大多数user interface生命周期影响
+    局限：不能直接与user interface交互、任务顺序执行、执行操作不能中断
+    注意：1.在mainfest文件中定义service标签时<service>并不包含intentfilter，因为
+    Activity使用显式intent，这也意味着相同应用或者有着同一用户ID应用的组件可以访问该service
+    2.可以在Activity、Fragment的任何地方发送处理请求、当IntentService处理完任务之后就回自动停止自己
+    从IntentService中返回结果
+    即使当你的app是在后台BroadcastReceiver也能处理传进来的Intent信息，如果想要通知用户后台发生了某种事
+    使用通知。 Never start an Activity in response to an incoming broadcast Intent.绝对不要根据进来的broadcastintent
+    启动Activity
+
+2.Loading Data in the Background
+    a.Running a Qurey width a CursorLoader
+    CursorLoader可以用于异步加载数据，并且它能根据query的变化重新运行
+     在Activity、FragmentActivity或Fragment中使用CursorLoader时要实现LoaderManager.LoaderCallbacks<Cursor>
+     接口
+     要初始化CursorLoader需调用LoderManager.initLoader()方法。
+     另外getLoaderManager()---->Fragment getSupportLoaderManager()---->FragmentActivity
+     一旦CursorLoader初始化过后就回调用onCreateLoader方法，该方法返回一个CursorLoader即Loader<Cursor>
+     在该方法中可以实例化一个新的CursorLoader用它的方法自定义查找，或者将实例化对象和查找同时进行。
+     当背后的框架程序获得该对象后，就开始查找，查找完毕框架程序就会调用onLoadFinished(),下一节会详述。
+    b.Handling the Results
+     除了onCreateLoader()和onLoadFinished()两个方法之外还有可能要实现onLoaderReset()
+     当CursorLoader检测到和Cursor所关联的数据发生变化时onLoaderReset()会被调用
+     当这些数据发生变化时，框架程序也会重新启动查找。
+       Handle Query Results
+       为了展示从CursorLoader返回的Cursor数据，使用一个View class，这个View class
+     实现了AdapterView,并且为这个View class提供了一个实现CursorAdapter的 adapter。
+     然后这个系统就回自动地从Cursor移动数据给view。
+     你可以在你要展示的数据之前设置view和adapter之间的联动，然后在onLoadFinished()中
+     将Cursor移动到adapter。一旦你将Cursor移动到adapter，这个系统就回自动地更新view。
+     如果你改变Cursor的内容上面的情况也会发生。
+       Delete Old Cursor Reference
+     当Cursor失效时CursorLoader会重置，这种情况经常发生，因为和Cursor绑定的数据放生了改变。
+     在query重新执行之前，系统会先调用你实现的onLoaderReset。在这个回调方法中
+     为了防止内存泄露(prevent memory leaks)，你得先删除和当前Cursor的所有关联。
+     一旦onLoaderReset()执行完毕，CursorLoader会重新执行query
+     例如：mAdapter.changeCursor(null);
+3.Managing Device Awake State
+     a. Keeping the Device Awake
+      Keep the Screen On
+      仅在Activity中添加Flags FLAGS_KEEP_SCREEN_ON
+      getWindow.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+      使用这种方法的优点是，它不像wake locks，它不需要特殊的权限，平台可以正确的管理应用程序之间的用户动作，而不需要
+      担心释放无用的资源。
+      另一种实现这种效果的方式是在layout XML文件中使用android:keepScreenOn属性
+      以上两种方式效果是等同的
+      在Activity中以编程方式设置flag的优点是你稍后有机会以编程的方式清理掉flag
+      从而允许屏幕关闭。
+       注意：除非你不想让屏幕在你正在执行的程序中保持，你不必清理flag
+       windowmanager会确保程序在进入后台或者转到前台正确执行。但是如果你想明确地
+       清掉flag从而让屏幕关闭，使用clearFlags()
+       getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+      Keep CPU On
+       使用wake locks
+       Thus you should use wake locks only when strictly necessary and hold them for as short a time as possible.
+       一个合理使用wake loacks的例子应该是当屏幕关闭时需要抓取wakelock 来保持CUP工作的后台service
+       use wake lock
+        first,add WAKE_LOCK permission to your application's mainfest file.
+	<uses-permission android:name="android.permission.WAKE_LOCAK"/>
+	接下来两种方式使用wake lock
+	直接方式：
+	PowerManager powerManager = (PowerManager)getSystemService(POWER_SERVICE);
+	Wakelock wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK,"MyWakelockTag");
+	wakeLock.acquire();
+
+	释放：wakeLock.release();很重要，关乎电池的电量
+
+	更好的方式
+      Using WakefulBroadcastReceiver
+      WakefulBroadcastReceiver 是一个关注应用的PARTAL_WAKE_LOCK创建和管理的广播接收器
+      WakefulBroadcastReceiver假冒一个Service(通常是IntentService)工作,确保设备在
+      这个过程中不会睡眠。
+
+      使用WakefulBroadcastReceiver <reveiver android:name=".MyWakefulReveiver"/>
+      receiver--->service finished调用receiver的completeWakefulIntent()
+
